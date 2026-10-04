@@ -23,15 +23,18 @@ document wins and this document is fixed.
 
 1. **A-6 Orientation**: portrait only. Phones first; on tablets the same
    layout scales up.
-2. **A-7 Single screen, no scrolling**: from top to bottom,
+2. **A-7 Chart tab, no scrolling**: from top to bottom,
 
    | Part                         | Section | Height (360 dp phone) |
    | ---------------------------- | ------- | --------------------- |
+   | Tabs (A-37)                  | 15      | ~48 dp                |
    | Chart                        | 4       | ~425 dp               |
    | Round chips                  | 6       | ~48 dp                |
    | Digit slots and Clear button | 5, 7    | ~48 dp                |
    | Keypad                       | 5       | ~105 dp               |
-   | **Total** (~690 dp usable)   |         | **~626 dp**           |
+   | **Total** (~690 dp usable)   |         | **~674 dp**           |
+
+   On shorter screens the chart shrinks to fit (A-11).
 
 3. **A-8 Theme**: follows the system light/dark setting. Hexagon
    backgrounds, borders and digits have light and dark variants; the round
@@ -114,31 +117,53 @@ document wins and this document is fixed.
 
 Simplified Chinese (default):
 
-| Key           | 中文                          |
-| ------------- | ----------------------------- |
-| `app_name`    | 蜂巢                          |
-| `round_label` | 第 %d 轮                      |
-| `match_count` | %d 个匹配                     |
-| `no_match`    | 无匹配                        |
-| `round_limit` | 最多 4 轮，请清除后重新开始。 |
-| `clear`       | 清除                          |
-| `clear_title` | 清除所有轮次？                |
-| `clear_ok`    | 清除                          |
-| `cancel`      | 取消                          |
+| Key                 | 中文                          |
+| ------------------- | ----------------------------- |
+| `app_name`          | 蜂巢                          |
+| `round_label`       | 第 %d 轮                      |
+| `match_count`       | %d 个匹配                     |
+| `no_match`          | 无匹配                        |
+| `round_limit`       | 最多 4 轮，请清除后重新开始。 |
+| `clear`             | 清除                          |
+| `clear_title`       | 清除所有轮次？                |
+| `clear_ok`          | 清除                          |
+| `cancel`            | 取消                          |
+| `tab_chart`         | 蜂巢                          |
+| `tab_filter`        | 筛选                          |
+| `filter_hint`       | 输入号码，用空格或逗号分隔    |
+| `filter_digit`      | 数字                          |
+| `mode_kill`         | 杀                            |
+| `mode_keep`         | 留                            |
+| `filter_count`      | 保留 %1$d 个，去掉 %2$d 个    |
+| `filter_duplicates` | 重复 %1$d 个：%2$s            |
+| `filter_invalid`    | 无效：%s                      |
+| `copy`              | 复制                          |
+| `copied`            | 已复制                        |
 
 English:
 
-| Key           | English                                 |
-| ------------- | --------------------------------------- |
-| `app_name`    | HexChain                                |
-| `round_label` | Round %d                                |
-| `match_count` | 1 match / %d matches                    |
-| `no_match`    | No match                                |
-| `round_limit` | Maximum 4 rounds. Clear to start again. |
-| `clear`       | Clear                                   |
-| `clear_title` | Clear all rounds?                       |
-| `clear_ok`    | Clear                                   |
-| `cancel`      | Cancel                                  |
+| Key                 | English                                 |
+| ------------------- | --------------------------------------- |
+| `app_name`          | HexChain                                |
+| `round_label`       | Round %d                                |
+| `match_count`       | 1 match / %d matches                    |
+| `no_match`          | No match                                |
+| `round_limit`       | Maximum 4 rounds. Clear to start again. |
+| `clear`             | Clear                                   |
+| `clear_title`       | Clear all rounds?                       |
+| `clear_ok`          | Clear                                   |
+| `cancel`            | Cancel                                  |
+| `tab_chart`         | Chart                                   |
+| `tab_filter`        | Filter                                  |
+| `filter_hint`       | Numbers, separated by spaces or commas  |
+| `filter_digit`      | Digit                                   |
+| `mode_kill`         | Kill                                    |
+| `mode_keep`         | Keep                                    |
+| `filter_count`      | Kept %1$d, removed %2$d                 |
+| `filter_duplicates` | Duplicates: %1$d (%2$s)                 |
+| `filter_invalid`    | Invalid: %s                             |
+| `copy`              | Copy                                    |
+| `copied`            | Copied                                  |
 
 ## 11. Testing
 
@@ -176,6 +201,10 @@ English:
    command-line tools, the Gradle wrapper); Android Studio is optional. CI
    is the source of truth for builds and tests. Setup and commands:
    `docs/CONTRIBUTING.md`.
+8. **A-48 Debug builds**: debug builds use the app ID
+   `com.zhan9san.hexchain.debug`, the version name suffix `-debug` and the
+   name "蜂巢 Debug" / "HexChain Debug", so they install next to the
+   release app instead of conflicting with it (different signing keys).
 
 ## 13. Implementation Order
 
@@ -192,3 +221,54 @@ English:
    small and a large phone screen, in light and dark mode, in English and
    Chinese.
 3. A signed APK `v1.0.0` is attached to a GitHub Release.
+
+## 15. Number Filter (Version 1.1)
+
+Android details for the core number filter (core section 8).
+
+### 15.1 Navigation
+
+1. **A-37 Separate views**: the filter has its own view, separate from the
+   chart view. A tab row at the top switches between the two views:
+   `tab_chart` (the existing chart view, sections 3 to 7, otherwise
+   unchanged) and `tab_filter` (the filter view, section 15.2). Each view
+   keeps its own state when switching. The app opens on the view used
+   last.
+
+### 15.2 Filter View
+
+From top to bottom:
+
+1. **A-38 Number list**: a multi-line text field (`filter_hint`) using the
+   system keyboard in number mode. Every separator of core section 8.1 is
+   accepted, so pasting a list from a chat app works.
+2. **A-39 Filter digit**: a row of 10 single-choice chips, `0` to `9`.
+   No digit is selected at first; until one is, no result is shown.
+3. **A-40 Mode**: a two-way switch, `mode_kill` / `mode_keep` (F-4, F-5).
+   Kill is selected at first.
+4. **A-41 Result**: updates on every change, without a button (O-4). Shows
+   - `filter_count` with the kept and removed counts, e.g. "保留 3 个，
+     去掉 2 个",
+   - the kept numbers in a wrapping grid, in order (F-6),
+   - `filter_duplicates` with the duplicate count and the duplicated
+     numbers, only when there are duplicates (F-3), e.g. "重复 1 个：
+     347 ×2", and
+   - `filter_invalid` with the invalid tokens, only when there are some
+     (F-2).
+5. **A-42 Copy**: a `copy` button puts the kept numbers on the clipboard,
+   separated by spaces, and briefly shows `copied`.
+6. **A-43 Clear**: a clear button inside the text field empties the number
+   list without confirmation. It does not affect the rounds (F-8).
+
+### 15.3 State and Testing
+
+1. **A-44 State**: the number list, filter digit, mode and selected tab are
+   saved like the rounds (A-22).
+2. **A-45 Shared filter scenarios**: `tests/scenarios.json` gains filter
+   scenarios (number list, digit, mode, expected kept and removed numbers,
+   duplicates and invalid tokens), used by the Python reference code and
+   the Kotlin tests (A-27, A-28). The example in core section 8.4 is the
+   first scenario.
+3. **A-46 UI tests**: type a list, pick a digit and switch modes; check the
+   kept numbers, both counts, the duplicates and the invalid tokens.
+4. **A-47 Version**: released as `1.1.0` (A-34).

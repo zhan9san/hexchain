@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A-48: debug builds have their own name so they can be told apart from the release app. -->
+<resources>
+    <string name="app_name">蜂巢 Debug</string>
+</resources>

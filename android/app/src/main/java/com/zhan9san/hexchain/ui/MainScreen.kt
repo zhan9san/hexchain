@@ -9,18 +9,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,9 +44,9 @@ import com.zhan9san.hexchain.core.Cell
 import com.zhan9san.hexchain.core.Honeycomb
 import com.zhan9san.hexchain.core.RoundResult
 
-/** The single screen (A-7): chart, round chips, digit slots + Clear, keypad. */
+/** The chart view (A-7): chart, round chips, digit slots + Clear, keypad. */
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun ChartScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     var confirmClear by rememberSaveable { mutableStateOf(false) }
     val results = viewModel.results
 
@@ -58,28 +55,24 @@ fun MainScreen(viewModel: MainViewModel) {
         results.forEachIndexed { n, result -> result.highlight.forEach { put(it, RoundColours[n]) } }
     }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            Modifier
-                .safeDrawingPadding()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            HoneycombChart(
-                grid = viewModel.honeycomb.grid,
-                highlight = highlight,
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            )
-            RoundChips(results)
-            InputRow(
-                typed = viewModel.typed,
-                nextColour = RoundColours[results.size.coerceAtMost(Honeycomb.MAX_ROUNDS - 1)],
-                isFull = viewModel.isFull,
-                canClear = results.isNotEmpty(),
-                onClear = { confirmClear = true },
-            )
-            Keypad(enabled = !viewModel.isFull, onDigit = viewModel::type, onBackspace = viewModel::backspace)
-        }
+    Column(
+        modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        HoneycombChart(
+            grid = viewModel.honeycomb.grid,
+            highlight = highlight,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+        )
+        RoundChips(results)
+        InputRow(
+            typed = viewModel.typed,
+            nextColour = RoundColours[results.size.coerceAtMost(Honeycomb.MAX_ROUNDS - 1)],
+            isFull = viewModel.isFull,
+            canClear = results.isNotEmpty(),
+            onClear = { confirmClear = true },
+        )
+        Keypad(enabled = !viewModel.isFull, onDigit = viewModel::type, onBackspace = viewModel::backspace)
     }
 
     // A-21: clearing is confirmed and cannot be undone.

@@ -36,7 +36,11 @@ class MainScreenTest {
     @Before
     fun clearSavedRounds() {
         rule.activity.getSharedPreferences("rounds", Context.MODE_PRIVATE).edit().clear().commit()
-        rule.runOnUiThread { viewModel.clear() }
+        rule.runOnUiThread {
+            viewModel.clear()
+            viewModel.selectTab(0)
+        }
+        rule.waitForIdle()
     }
 
     private fun typeRound(digits: List<Int>) {
