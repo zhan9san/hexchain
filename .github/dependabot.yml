@@ -1,0 +1,30 @@
+# Weekly dependency update pull requests, one per ecosystem.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      # v6+ bundles a proprietary caching component under Gradle's Terms of
+      # Use; stay on the MIT-licensed v5 unless those terms are accepted.
+      - dependency-name: gradle/actions*
+        versions: [">= 6"]
+
+  - package-ecosystem: gradle
+    directory: /android
+    schedule:
+      interval: weekly
+    groups:
+      android:
+        patterns: ["*"]
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    # A Pillow update changes the expected images: regenerate tests/expected/
+    # in the same pull request (docs/CONTRIBUTING.md 4.3).
