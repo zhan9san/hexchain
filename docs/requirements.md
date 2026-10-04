@@ -1,11 +1,21 @@
-# Honeycomb Number Finder — Requirements
+# HexChain — Core Requirements
 
-## 1. Background
+## 1. Overview
 
-`images/honeycomb.jpg` is a honeycomb chart of hexagons, each holding a
-single digit (0–9). The user enters rounds of 3 digits; the app finds and
-highlights connected cells holding those digits, each round searching around
-the previous one.
+A fixed honeycomb chart of hexagons holds one digit (0–9) per hexagon. The
+user enters up to 4 rounds of 3 digits. For each round, every group of 3
+connected cells holding those digits is found; from round 2 on, the search
+is limited to the area around the previous round's result.
+
+This document defines the core behaviour only and is platform independent.
+Platform documents add presentation and technology details on top of it:
+
+- Android: `docs/android.md`
+
+A platform document may add details but must not change or contradict a
+core rule; if a platform needs different behaviour, this document changes
+first. `honeycomb.py` and `tests/test_honeycomb.py` are the reference
+implementation and tests of this document.
 
 ## 2. Definitions
 
@@ -46,7 +56,7 @@ Coordinates outside the grid are discarded.
 
 ### 3.2 Initial Data
 
-Transcribed from `images/honeycomb.jpg` and verified against the image.
+Transcribed from `images/honeycomb.jpg` and verified against it.
 
 ```text
 R01: 4 7 3 1 0 8 5 0 9 6 3 8
@@ -71,13 +81,13 @@ R16:  0 4 2 7 8 1 2 3 8 4 7
 
 In scope:
 
-- Android app.
-- The single chart in `images/honeycomb.jpg` (section 3.2).
+- The single fixed chart in section 3.2.
 
 Out of scope:
 
 - Loading or editing other charts.
-- Undoing a single round or editing an earlier round (see R-10).
+- Undoing a single round, editing an earlier round, or undoing a clear
+  (see R-10).
 
 ## 5. Rules
 
@@ -85,8 +95,8 @@ Out of scope:
 
 1. **R-1 Round size**: every round has exactly 3 digits (each 0–9).
    Repeated digits are allowed (e.g. `1 1 5`, `7 7 7`).
-2. **R-2 Round count**: the user enters 1 to 4 rounds, one after another.
-   A 5th round is rejected with a message; the user must clear first.
+2. **R-2 Round count**: at most 4 rounds can be entered, one after another.
+   A 5th round is not accepted; the user must clear first.
 
 ### 5.2 Matching
 
@@ -103,48 +113,43 @@ Out of scope:
    **or** overlap `H(n-1)`. Any cell of `H(n-1)` counts; the user does not
    pick a specific previous match.
 3. **R-7 Reuse**: a round-n match may reuse cells of `H(n-1)`. E.g. after
-   `3 4 7`, round `7 8 9` may start from a 7 cell already highlighted by
-   round 1 (see 7.5).
+   `3 4 7`, round `7 8 9` may start from a 7 cell of `H(1)` (see 7.5).
 4. **R-8 Previous round only**: round `n` is checked against round `n-1`
    only. Rounds `n-2` and earlier are ignored.
 5. **R-9 Empty chain**: if round `n-1` has no valid match, `H(n-1)` is empty
    and round `n` (and every later round) has no valid match either. The
-   input is still accepted and shown as "no match".
+   round is still accepted, with an empty result.
 
 ### 5.4 Clear
 
-1. **R-10 Clear all**: the user can clear all numbers. Clearing removes
-   every round and every highlight, returning the diagram to its original
-   state; the next input becomes round 1 again. Clearing is the only way to
-   change entered rounds.
+1. **R-10 Clear all**: clearing removes every round and its result; the
+   next input becomes round 1 again. Clearing is the only way to change
+   entered rounds and cannot be undone.
 
-## 6. Functional Requirements
+## 6. Outputs
 
-1. **FR-1 Display**: show the chart from `images/honeycomb.jpg` with highlights
-   drawn over its hexagons.
-2. **FR-2 Input**: input 3 digits per round (R-1, R-2). Show the rounds
-   already entered, in order.
-3. **FR-3 Search**: when a round is entered, find its valid matches
+1. **O-1 Search**: when a round is entered, its valid matches are computed
    (R-3 to R-9). Each match is counted once regardless of the order its
    cells were discovered.
-4. **FR-4 Highlight**: highlight `H(n)` for every entered round. Each round
-   has one colour for all its matches, and all rounds stay visible
-   together. When a cell belongs to more than one round (R-7, R-8), the
-   later round's colour is shown on top.
-5. **FR-5 Result info**: per round, show the number of valid matches, or
-   "no match" when there are none.
-6. **FR-6 Clear**: provide a clear action that implements R-10.
+2. **O-2 Result per round**: for every entered round, in order, the result
+   is
+   - the round's 3 digits,
+   - the list of valid matches (each a set of 3 cells),
+   - the highlight set `H(n)`, and
+   - the number of valid matches (0 means no match).
+3. **O-3 Shared cells**: a cell may belong to several highlight sets
+   (R-7, R-8); each `H(n)` is kept separately.
 
 ## 7. Examples
 
 ### 7.1 Single Combination
 
-Input `4 7 8`: cells R01C1 (4), R01C2 (7), R02C1 (8) are mutually adjacent
+Input `4 7 8`: cells R1C1 (4), R1C2 (7), R2C1 (8) are mutually adjacent
 (triangle), so all three are highlighted.
 
 ### 7.2 Round 1: `3 4 7`
 
-5 matches, 13 cells (red in `tests/expected/347.jpg`):
+5 matches, 13 cells:
 
 | # | Cells               | Digits | Shape    |
 | - | ------------------- | ------ | -------- |
@@ -156,7 +161,7 @@ Input `4 7 8`: cells R01C1 (4), R01C2 (7), R02C1 (8) are mutually adjacent
 
 ### 7.3 Round 2: `0 5 1` around round 1
 
-`0 5 1` has 12 matches in the whole grid; 4 of them touch `H(1)` (blue in `tests/expected/347_051.jpg`):
+`0 5 1` has 12 matches in the whole grid; 4 of them touch `H(1)`:
 
 | # | Cells             | Digits | Touches round-1 cell(s)      |
 | - | ----------------- | ------ | ---------------------------- |
@@ -167,8 +172,8 @@ Input `4 7 8`: cells R01C1 (4), R01C2 (7), R02C1 (8) are mutually adjacent
 
 ### 7.4 Round 3: `2 9 3` around round 2
 
-`2 9 3` has 14 matches in the whole grid; 4 of them touch `H(2)` (green in
-`tests/expected/347_051_293.jpg`). Round 1 is ignored (R-8):
+`2 9 3` has 14 matches in the whole grid; 4 of them touch `H(2)`. Round 1 is
+ignored (R-8):
 
 | # | Cells               | Digits | Touches round-2 cell(s)          |
 | - | ------------------- | ------ | -------------------------------- |
@@ -179,9 +184,8 @@ Input `4 7 8`: cells R01C1 (4), R01C2 (7), R02C1 (8) are mutually adjacent
 
 ### 7.5 Reuse: round 1 `3 4 7`, round 2 `7 8 9`
 
-`7 8 9` has 10 valid matches (blue in `tests/expected/347_789.jpg`).
-1 only touches `H(1)`; 9 reuse a red 7 of round 1, and those reused cells
-show blue (FR-4), e.g.:
+`7 8 9` has 10 valid matches. 1 only touches `H(1)`; 9 reuse a 7 cell of
+`H(1)` (R-7), e.g.:
 
 | # | Cells               | Digits | Relation to `H(1)`                |
 | - | ------------------- | ------ | --------------------------------- |
@@ -189,4 +193,5 @@ show blue (FR-4), e.g.:
 | 2 | R1C2, R2C1, R3C2    | 7 8 9  | overlaps R1C2 (7)                 |
 | 3 | R2C5, R2C6, R2C7    | 9 7 8  | overlaps R2C6 (7)                 |
 
-All cell references in this section are 1-based (`R<row>C<column>`).
+All cell references in this section are 1-based (`R<row>C<column>`). The
+full expected results are the scenarios in `tests/test_honeycomb.py`.

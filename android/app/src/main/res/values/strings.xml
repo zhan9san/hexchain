@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/android.md section 10: Chinese is the default (A-26) -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="zh">
+    <string name="app_name">蜂巢</string>
+    <string name="round_label">第 %d 轮</string>
+    <plurals name="match_count">
+        <item quantity="other">%d 个匹配</item>
+    </plurals>
+    <string name="no_match">无匹配</string>
+    <string name="round_limit">最多 4 轮，请清除后重新开始。</string>
+    <string name="clear">清除</string>
+    <string name="clear_title">清除所有轮次？</string>
+    <string name="clear_ok">清除</string>
+    <string name="cancel">取消</string>
+    <string name="backspace">退格</string>
+</resources>

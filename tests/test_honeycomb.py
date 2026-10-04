@@ -1,13 +1,17 @@
 """Honeycomb tests, written as scenarios.
 
-Each scenario lists the rounds the user enters and, for every round,
+The scenarios live in tests/scenarios.json, shared with the Android tests
+(docs/android.md A-27). Each scenario lists the rounds the user enters and,
+for every round,
 - the expected matches, with cells written `R<row>C<col>:<digit>` (1-based,
-  as in docs/requirements.md; the digit is checked against the grid too), and
+  as in docs/requirements.md; the digit is checked against the grid too),
+- matches that exist in the grid but must be excluded, and
 - the expected highlight image after that round (tests/expected/*.jpg).
 
 Run: python3 tests/test_honeycomb.py
 """
 
+import json
 import math
 import sys
 import tempfile
@@ -29,58 +33,9 @@ except ImportError:  # Pillow not installed: image tests are skipped
     Image = None
 
 
-# ---------------------------------------------------------------------------
-# Scenarios
-# ---------------------------------------------------------------------------
-
-THREE_ROUNDS = {
-    "rounds": [[3, 4, 7], [0, 5, 1], [2, 9, 3]],
-    "matches": [
-        # Round 1: 3 4 7, anywhere in the grid
-        [
-            ("R1C1:4", "R1C2:7", "R1C3:3"),
-            ("R2C6:7", "R3C6:3", "R3C7:4"),
-            ("R3C6:3", "R3C7:4", "R4C7:7"),
-            ("R8C8:4", "R8C9:3", "R9C8:7"),
-            ("R15C7:7", "R15C8:4", "R16C8:3"),
-        ],
-        # Round 2: 0 5 1, touching round 1
-        [
-            ("R1C7:5", "R1C8:0", "R2C8:1"),
-            ("R2C2:1", "R3C3:5", "R4C2:0"),
-            ("R3C5:0", "R4C5:5", "R4C6:1"),
-            ("R9C6:0", "R9C7:5", "R10C5:1"),
-        ],
-        # Round 3: 2 9 3, touching round 2 (round 1 is ignored)
-        [
-            ("R5C2:2", "R5C3:3", "R6C3:9"),
-            ("R10C6:9", "R10C7:2", "R11C6:3"),
-            ("R10C6:9", "R10C7:2", "R11C8:3"),
-            ("R10C6:9", "R11C6:3", "R12C5:2"),
-        ],
-    ],
-    "images": ["347.jpg", "347_051.jpg", "347_051_293.jpg"],
-}
-
-REUSE = {
-    "rounds": [[3, 4, 7], [7, 8, 9]],
-    "matches": [
-        THREE_ROUNDS["matches"][0],
-        # Round 2: 7 8 9; all but the last reuse a round-1 7 cell
-        [
-            ("R1C2:7", "R2C1:8", "R3C2:9"),
-            ("R1C6:8", "R2C5:9", "R2C6:7"),
-            ("R2C5:9", "R2C6:7", "R2C7:8"),
-            ("R3C8:8", "R4C7:7", "R5C7:9"),
-            ("R4C7:7", "R5C6:8", "R5C7:9"),
-            ("R4C7:7", "R5C7:9", "R6C7:8"),
-            ("R7C8:9", "R8C7:8", "R9C8:7"),
-            ("R8C7:8", "R9C8:7", "R9C9:9"),
-            ("R9C8:7", "R9C9:9", "R10C8:8"),
-            ("R14C9:7", "R15C9:9", "R16C9:8"),  # touches only
-        ],
-    ],
-    "images": ["347.jpg", "347_789.jpg"],
+SCENARIOS = {
+    sc["name"]: sc
+    for sc in json.loads((ROOT / "tests" / "scenarios.json").read_text())["scenarios"]
 }
 
 
@@ -150,6 +105,17 @@ class ScenarioTests:
                 cells = {cell for m in expected for cell in parse(m)}
                 self.assertEqual(highlights[n], cells)
 
+    def test_excluded(self):
+        # Matches that exist in the grid but are not valid in this round
+        # (e.g. they only touch a round older than the previous one).
+        rounds = self.SCENARIO["rounds"]
+        for n, excluded in enumerate(self.SCENARIO["excluded"]):
+            with self.subTest(label(rounds, n)):
+                valid = {parse(m) for m in self.SCENARIO["matches"][n]}
+                for match in excluded:
+                    self.assertIn(parse(match), find_combinations(GRID, rounds[n]))
+                    self.assertNotIn(parse(match), valid)
+
     @unittest.skipIf(Image is None, "Pillow not installed")
     def test_images(self):
         rounds = self.SCENARIO["rounds"]
@@ -165,19 +131,13 @@ class ScenarioTests:
 class TestThreeRounds(ScenarioTests, unittest.TestCase):
     """3 4 7 -> 0 5 1 -> 2 9 3"""
 
-    SCENARIO = THREE_ROUNDS
-
-    def test_round_3_ignores_round_1(self):
-        # These 2 9 3 matches touch round 1 but not round 2, so they are excluded.
-        for match in [("R4C8:2", "R4C9:3", "R5C9:9"), ("R15C9:9", "R16C7:2", "R16C8:3")]:
-            self.assertIn(parse(match), find_combinations(GRID, [2, 9, 3]))
-            self.assertNotIn(match, THREE_ROUNDS["matches"][2])
+    SCENARIO = SCENARIOS["three_rounds"]
 
 
 class TestReuse(ScenarioTests, unittest.TestCase):
     """3 4 7 -> 7 8 9: round 2 may reuse a round-1 7 cell"""
 
-    SCENARIO = REUSE
+    SCENARIO = SCENARIOS["reuse"]
 
 
 class TestRules(unittest.TestCase):

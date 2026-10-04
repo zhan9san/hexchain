@@ -1,29 +1,15 @@
-"""Find adjacent 3-number combinations in the honeycomb chart (images/honeycomb.jpg)."""
+"""Core logic (docs/requirements.md): find adjacent 3-number combinations in the honeycomb chart."""
 
+import json
 from itertools import combinations
+from pathlib import Path
 
 MAX_ROUNDS = 4
 
+# Shared with the Android app (docs/android.md A-27).
 # Odd rows (0-based even) have 12 cells; even rows (0-based odd) have 11 cells
 # and are shifted right by half a cell.
-GRID = [
-    [4, 7, 3, 1, 0, 8, 5, 0, 9, 6, 3, 8],
-    [8, 1, 2, 4, 9, 7, 8, 1, 5, 4, 2],
-    [3, 9, 5, 8, 0, 3, 4, 8, 0, 4, 5, 9],
-    [4, 0, 7, 6, 5, 1, 7, 2, 3, 6, 2],
-    [5, 2, 3, 1, 2, 8, 9, 5, 9, 1, 8, 3],
-    [1, 8, 9, 5, 6, 0, 8, 4, 7, 5, 0],
-    [7, 2, 5, 4, 2, 3, 5, 9, 0, 6, 9, 7],
-    [8, 9, 3, 8, 5, 6, 8, 4, 3, 1, 2],
-    [9, 2, 4, 0, 4, 0, 5, 7, 9, 6, 8, 5],
-    [3, 6, 1, 7, 1, 9, 2, 8, 4, 0, 7],
-    [1, 8, 5, 9, 6, 3, 8, 3, 1, 5, 9, 5],
-    [4, 0, 2, 7, 2, 4, 2, 6, 2, 4, 0],
-    [7, 2, 4, 8, 2, 0, 3, 1, 9, 9, 1, 8],
-    [1, 2, 0, 4, 1, 0, 8, 5, 7, 2, 3],
-    [6, 8, 3, 5, 9, 6, 7, 4, 9, 5, 9, 1],
-    [0, 4, 2, 7, 8, 1, 2, 3, 8, 4, 7],
-]
+GRID = json.loads((Path(__file__).resolve().parent / "data" / "grid.json").read_text())
 
 
 def neighbours(grid, r, c):

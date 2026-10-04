@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/android.md section 10: English when the system language is English (A-26) -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
+    <string name="app_name">HexChain</string>
+    <string name="round_label">Round %d</string>
+    <plurals name="match_count">
+        <item quantity="one">%d match</item>
+        <item quantity="other">%d matches</item>
+    </plurals>
+    <string name="no_match">No match</string>
+    <string name="round_limit">Maximum 4 rounds. Clear to start again.</string>
+    <string name="clear">Clear</string>
+    <string name="clear_title">Clear all rounds?</string>
+    <string name="clear_ok">Clear</string>
+    <string name="cancel">Cancel</string>
+    <string name="backspace">Backspace</string>
+</resources>
