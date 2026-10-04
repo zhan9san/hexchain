@@ -51,8 +51,12 @@ jobs:
           apk="hexchain-${GITHUB_REF_NAME}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$apk"
           apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
-          digest=$("$apksigner" verify --print-certs "$apk" \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          certs=$("$apksigner" verify --print-certs "$apk")
+          echo "$certs"
+          # "Signer #1 certificate SHA-256 digest: …" (build-tools 36) or
+          # "V2 Signer: certificate SHA-256 digest: …" (37); shown as AB:CD:… like keytool.
+          digest=$(echo "$certs" | sed -n 's/^.*certificate SHA-256 digest: //p' | head -1 \
+            | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')
           [ -n "$digest" ] || { echo "Could not read the signing certificate" >&2; exit 1; }
           printf 'Signing certificate SHA-256: `%s`\n' "$digest" > notes.md
           cat notes.md

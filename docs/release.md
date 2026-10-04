@@ -88,7 +88,9 @@ also writes it into every release's notes.
    apksigner verify --print-certs /tmp/hexchain/hexchain-v1.0.1.apk
    ```
 
-   `apksigner` is in `$ANDROID_HOME/build-tools/<version>/`.
+   `apksigner` is in `$ANDROID_HOME/build-tools/<version>/`. It prints the
+   SHA-256 digest in lowercase without colons; `keytool` and the release
+   notes show the same value as `AB:CD:…`.
 
 ## 3. Installing on a Phone
 
