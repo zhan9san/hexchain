@@ -7,6 +7,9 @@ user enters up to 4 rounds of 3 digits. For each round, every group of 3
 connected cells holding those digits is found; from round 2 on, the search
 is limited to the area around the previous round's result.
 
+Separately, a **number filter** (section 8) takes a list of 3-digit numbers
+and kills (removes) or keeps the numbers that contain a chosen digit.
+
 This document defines the core behaviour only and is platform independent.
 Platform documents add presentation and technology details on top of it:
 
@@ -14,8 +17,8 @@ Platform documents add presentation and technology details on top of it:
 
 A platform document may add details but must not change or contradict a
 core rule; if a platform needs different behaviour, this document changes
-first. `honeycomb.py` and `tests/test_honeycomb.py` are the reference
-implementation and tests of this document.
+first. `honeycomb.py` and `number_filter.py`, with the tests in `tests/`,
+are the reference implementation of this document.
 
 ## 2. Definitions
 
@@ -82,6 +85,7 @@ R16:  0 4 2 7 8 1 2 3 8 4 7
 In scope:
 
 - The single fixed chart in section 3.2.
+- The number filter (section 8), independent of the chart and its rounds.
 
 Out of scope:
 
@@ -195,3 +199,66 @@ ignored (R-8):
 
 All cell references in this section are 1-based (`R<row>C<column>`). The
 full expected results are the scenarios in `tests/test_honeycomb.py`.
+
+## 8. Number Filter
+
+The number filter works on a list of numbers typed by the user. It does not
+use the chart and does not change the rounds.
+
+### 8.1 Definitions
+
+- **Number list**: free text holding numbers and separators.
+- **Separator**: a space (including the full-width space `　`), a tab, a
+  line break, a comma `,`, a full-width comma `，` or an enumeration comma
+  `、`. Separators can be mixed and repeated.
+- **Token**: a run of characters between separators.
+- **Valid number**: a token of exactly 3 digits `0`–`9`, `000` to `999`.
+  Leading zeros are kept (`051` stays `051`). Full-width digits such as
+  `３４７` are not valid.
+- **Filter digit**: one digit, `0` to `9`, chosen by the user.
+- **Mode**: **kill** or **keep** (F-4, F-5).
+
+### 8.2 Rules
+
+1. **F-1 Parsing**: the number list is split into tokens at separators.
+2. **F-2 Invalid tokens**: any token that is not a valid number (e.g. `34`,
+   `3478`, `3a7`) is invalid. Invalid tokens are reported back in their
+   input order and are otherwise ignored.
+3. **F-3 Duplicates**: a valid number entered more than once counts once,
+   at its first position. Every extra copy is a duplicate: `347 347 347`
+   has 2 duplicates.
+4. **F-4 Kill digit d**: every number containing `d` is removed; the rest
+   are kept.
+5. **F-5 Keep digit d**: every number not containing `d` is removed; the
+   numbers containing `d` are kept.
+6. **F-6 Order**: kept and removed numbers stay in input order (by first
+   position, F-3).
+7. **F-7 Counts**: kept + removed = the number of distinct valid numbers.
+   For the same list and digit, kill and keep swap the kept and removed
+   numbers.
+8. **F-8 Independence**: the filter neither reads nor changes the rounds
+   (section 5), and clearing the rounds (R-10) does not clear the filter.
+
+### 8.3 Outputs
+
+1. **O-4 Filter result**: for a number list, filter digit and mode, the
+   result is
+   - the kept numbers and their count,
+   - the removed numbers and their count,
+   - the number of duplicates, and each duplicated number with how often
+     it was entered (e.g. `347 ×2`), and
+   - the invalid tokens.
+
+### 8.4 Example
+
+Number list `347, 468 986，707、123 347 34a`, filter digit `7`.
+
+Distinct valid numbers: `347 468 986 707 123` (5). Duplicates: 1
+(`347 ×2`). Invalid: `34a`.
+
+| Mode   | Kept          | Removed       |
+| ------ | ------------- | ------------- |
+| Kill 7 | `468 986 123` | `347 707`     |
+| Keep 7 | `347 707`     | `468 986 123` |
+
+Counts: kill 7 keeps 3 and removes 2; keep 7 keeps 2 and removes 3.

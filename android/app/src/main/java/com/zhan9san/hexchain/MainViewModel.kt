@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -20,6 +21,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         Honeycomb.fromJson(app.assets.open("grid.json").bufferedReader().use { it.readText() })
 
     private val prefs = app.getSharedPreferences("rounds", Context.MODE_PRIVATE)
+    private val appPrefs = app.getSharedPreferences("app", Context.MODE_PRIVATE)
+
+    /** A-37: the selected view (0 = chart, 1 = filter); the app opens on the one used last. */
+    var tab: Int by mutableIntStateOf(appPrefs.getInt(KEY_TAB, 0).coerceIn(0, 1))
+        private set
+
+    fun selectTab(index: Int) {
+        tab = index
+        appPrefs.edit().putInt(KEY_TAB, index).apply()
+    }
 
     /** Submitted rounds, oldest first. */
     var rounds: List<List<Int>> by mutableStateOf(load())
@@ -72,5 +83,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val KEY = "rounds"
+        const val KEY_TAB = "tab"
     }
 }

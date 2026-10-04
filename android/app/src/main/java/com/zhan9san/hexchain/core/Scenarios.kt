@@ -46,3 +46,36 @@ data class Scenario(
             match.map { parseCell(it, honeycomb) }.sorted()
     }
 }
+
+/** A number filter scenario from tests/scenarios.json ("filter_scenarios", A-45). */
+data class FilterScenario(
+    val name: String,
+    val input: String,
+    val digit: Int,
+    val mode: FilterMode,
+    val expected: FilterResult,
+) {
+    companion object {
+        fun parseAll(text: String): List<FilterScenario> =
+            Json.parseToJsonElement(text).jsonObject.getValue("filter_scenarios").jsonArray.map { element ->
+                val o = element.jsonObject
+                fun strings(key: String) = o.getValue(key).jsonArray.map { it.jsonPrimitive.content }
+                FilterScenario(
+                    name = o.getValue("name").jsonPrimitive.content,
+                    input = o.getValue("input").jsonPrimitive.content,
+                    digit = o.getValue("digit").jsonPrimitive.int,
+                    mode = FilterMode.valueOf(o.getValue("mode").jsonPrimitive.content.uppercase()),
+                    expected = FilterResult(
+                        kept = strings("kept"),
+                        removed = strings("removed"),
+                        duplicates = o.getValue("duplicates").jsonArray.map {
+                            val (number, times) = it.jsonArray
+                            number.jsonPrimitive.content to times.jsonPrimitive.int
+                        },
+                        duplicateCount = o.getValue("duplicate_count").jsonPrimitive.int,
+                        invalid = strings("invalid"),
+                    ),
+                )
+            }
+    }
+}

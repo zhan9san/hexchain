@@ -102,9 +102,8 @@ also writes it into every release's notes.
   unknown apps" for the browser or file app used.
 - **Updates**: install the newer APK the same way; it replaces the old
   version and keeps the saved rounds.
-- **Coming from a debug build**: a debug APK is signed with a different key
-  (the machine's debug key), so uninstall it before installing a release
-  for the first time.
+- **Debug builds**: a debug APK is a separate app ("蜂巢 Debug", A-48), so it
+  installs next to the release app and never replaces it.
 
 ## 4. When Things Go Wrong
 

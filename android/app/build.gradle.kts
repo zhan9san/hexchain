@@ -35,6 +35,11 @@ android {
     }
 
     buildTypes {
+        // A-48: debug builds install next to the release app instead of conflicting with it.
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")

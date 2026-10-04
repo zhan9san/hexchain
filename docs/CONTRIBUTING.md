@@ -103,13 +103,12 @@ Such failures can be intermittent; running the command again often works.
 
 Python commands run in the repository root; Gradle commands in `android/`.
 
-| What                          | Command                                    |
-| ----------------------------- | ------------------------------------------ |
-| Core and image tests (Python) | `.venv/bin/python tests/test_honeycomb.py` |
-| Core logic tests (Kotlin)     | `./gradlew :app:testDebugUnitTest`         |
-| UI tests (running emulator)   | `./gradlew :app:connectedDebugAndroidTest` |
-| Debug APK                     | `./gradlew :app:assembleDebug`             |
-| Lint                          | `./gradlew :app:lintDebug`                 |
+- Python tests (core logic, number filter, images):
+  `.venv/bin/python -m unittest discover -s tests`
+- Kotlin core logic tests: `./gradlew :app:testDebugUnitTest`
+- UI tests, on a running emulator: `./gradlew :app:connectedDebugAndroidTest`
+- Debug APK: `./gradlew :app:assembleDebug`
+- Lint: `./gradlew :app:lintDebug`
 
 Start an emulator with a window:
 
@@ -117,7 +116,9 @@ Start an emulator with a window:
 emulator -avd large_latest
 ```
 
-Install the debug APK on the running emulator or a USB-connected phone:
+Install the debug APK on the running emulator or a USB-connected phone. It
+is a separate app, "蜂巢 Debug" (`com.zhan9san.hexchain.debug`), so it
+installs next to a release version:
 
 ```bash
 adb install -r android/app/build/outputs/apk/debug/app-debug.apk
@@ -135,12 +136,12 @@ git):
 ### 4.1 Changing a Core Rule
 
 1. Update `docs/requirements.md`.
-2. Update or add scenarios in `tests/scenarios.json`: rounds, expected
-   matches and excluded matches. They are shared by the Python and Kotlin
-   tests.
-3. Update `honeycomb.py` and
-   `android/app/src/main/java/com/zhan9san/hexchain/core/Honeycomb.kt` the
-   same way.
+2. Update or add scenarios in `tests/scenarios.json`: `scenarios` for the
+   rounds (expected and excluded matches) and `filter_scenarios` for the
+   number filter. They are shared by the Python and Kotlin tests.
+3. Update the Python reference (`honeycomb.py`, `number_filter.py`) and
+   the Kotlin code in `android/app/src/main/java/com/zhan9san/hexchain/core/`
+   the same way.
 4. If highlights change, regenerate the affected images in
    `tests/expected/`, check them by eye, and commit them:
 

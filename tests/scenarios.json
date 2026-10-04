@@ -73,5 +73,61 @@
       ],
       "images": ["347.jpg", "347_789.jpg"]
     }
+  ],
+  "filter_scenarios": [
+    {
+      "name": "example_kill_7",
+      "description": "docs/requirements.md 8.4, kill 7",
+      "input": "347, 468 986，707、123 347 34a",
+      "digit": 7,
+      "mode": "kill",
+      "kept": ["468", "986", "123"],
+      "removed": ["347", "707"],
+      "duplicates": [
+        ["347", 2]
+      ],
+      "duplicate_count": 1,
+      "invalid": ["34a"]
+    },
+    {
+      "name": "example_keep_7",
+      "description": "docs/requirements.md 8.4, keep 7",
+      "input": "347, 468 986，707、123 347 34a",
+      "digit": 7,
+      "mode": "keep",
+      "kept": ["347", "707"],
+      "removed": ["468", "986", "123"],
+      "duplicates": [
+        ["347", 2]
+      ],
+      "duplicate_count": 1,
+      "invalid": ["34a"]
+    },
+    {
+      "name": "leading_zeros_keep_0",
+      "description": "leading zeros, full-width space, repeated separators, 3 copies, full-width digit is invalid",
+      "input": "051　051 051\n700,,3478 34 ７00",
+      "digit": 0,
+      "mode": "keep",
+      "kept": ["051", "700"],
+      "removed": [],
+      "duplicates": [
+        ["051", 3]
+      ],
+      "duplicate_count": 2,
+      "invalid": ["3478", "34", "７00"]
+    },
+    {
+      "name": "empty_kill_5",
+      "description": "empty input",
+      "input": "",
+      "digit": 5,
+      "mode": "kill",
+      "kept": [],
+      "removed": [],
+      "duplicates": [],
+      "duplicate_count": 0,
+      "invalid": []
+    }
   ]
 }
