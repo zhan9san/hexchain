@@ -21,7 +21,10 @@ class HoneycombTest {
 
     @Test
     fun scenariosAreLoaded() {
-        assertEquals(listOf("three_rounds", "reuse"), scenarios.map { it.name })
+        assertEquals(
+            listOf("three_rounds", "reuse", "delete_round_2", "edit_round_2"),
+            scenarios.map { it.name },
+        )
     }
 
     @Test
@@ -50,6 +53,27 @@ class HoneycombTest {
             }
         }
     }
+
+    @Test
+    fun deleteMovesLaterRoundsUp() {
+        val base = scenario("three_rounds").rounds
+        assertEquals(scenario("delete_round_2").rounds, Honeycomb.deleteRound(base, 1))
+    }
+
+    @Test
+    fun editReplacesDigitsOnly() {
+        val base = scenario("three_rounds").rounds
+        assertEquals(scenario("edit_round_2").rounds, Honeycomb.editRound(base, 1, listOf(7, 8, 9)))
+    }
+
+    @Test
+    fun badEditAndDelete() {
+        val base = scenario("three_rounds").rounds
+        assertThrows(IllegalArgumentException::class.java) { Honeycomb.deleteRound(base, 3) }
+        assertThrows(IllegalArgumentException::class.java) { Honeycomb.editRound(base, 0, listOf(1, 2)) }
+    }
+
+    private fun scenario(name: String) = scenarios.first { it.name == name }
 
     @Test
     fun orderDoesNotMatter() {

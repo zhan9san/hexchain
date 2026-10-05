@@ -72,3 +72,20 @@ def highlight_rounds(grid, rounds):
         previous = highlighted_cells(grid, digits, previous)
         result.append(previous)
     return result
+
+
+def edit_round(rounds, n, digits):
+    """R-11: replace the digits of round n (0-based); later rounds are recomputed
+    by highlight_rounds (O-5)."""
+    if not 0 <= n < len(rounds):
+        raise IndexError(f"no round {n + 1}")
+    if len(digits) != 3 or any(not 0 <= d <= 9 for d in digits):
+        raise ValueError(f"a round is 3 digits: {digits}")
+    return rounds[:n] + [list(digits)] + rounds[n + 1:]
+
+
+def delete_round(rounds, n):
+    """R-12: remove round n (0-based); later rounds move up one place."""
+    if not 0 <= n < len(rounds):
+        raise IndexError(f"no round {n + 1}")
+    return rounds[:n] + rounds[n + 1:]

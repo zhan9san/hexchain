@@ -1,6 +1,13 @@
 package com.zhan9san.hexchain.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.Role
+import androidx.compose.runtime.remember
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -64,15 +71,18 @@ fun ChartScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
             highlight = highlight,
             modifier = Modifier.weight(1f).fillMaxWidth(),
         )
-        RoundChips(results)
+        val editing = viewModel.editing
+        RoundChips(results, editing, onEdit = viewModel::startEdit, onDelete = viewModel::deleteRound)
         InputRow(
             typed = viewModel.typed,
-            nextColour = RoundColours[results.size.coerceAtMost(Honeycomb.MAX_ROUNDS - 1)],
+            slotColour = RoundColours[editing ?: results.size.coerceAtMost(Honeycomb.MAX_ROUNDS - 1)],
+            editing = editing,
             isFull = viewModel.isFull,
             canClear = results.isNotEmpty(),
             onClear = { confirmClear = true },
+            onCancelEdit = viewModel::cancelEdit,
         )
-        Keypad(enabled = !viewModel.isFull, onDigit = viewModel::type, onBackspace = viewModel::backspace)
+        Keypad(enabled = viewModel.canType, onDigit = viewModel::type, onBackspace = viewModel::backspace)
     }
 
     // A-21: clearing is confirmed and cannot be undone.
@@ -96,9 +106,9 @@ fun ChartScreen(viewModel: MainViewModel, modifier: Modifier = Modifier) {
     }
 }
 
-/** A-19: one chip per round, up to 4 in a row. */
+/** A-19, A-49: one chip per round, up to 4 in a row; tapping a chip opens its menu. */
 @Composable
-private fun RoundChips(results: List<RoundResult>) {
+private fun RoundChips(results: List<RoundResult>, editing: Int?, onEdit: (Int) -> Unit, onDelete: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth().height(48.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         for (n in 0 until Honeycomb.MAX_ROUNDS) {
             val result = results.getOrNull(n)
@@ -106,6 +116,7 @@ private fun RoundChips(results: List<RoundResult>) {
                 Spacer(Modifier.weight(1f))
                 continue
             }
+            var menuOpen by remember { mutableStateOf(false) }
             val colour = RoundColours[n]
             val digits = result.digits.joinToString(" ")
             val outcome = if (result.matches.isEmpty()) {
@@ -114,34 +125,86 @@ private fun RoundChips(results: List<RoundResult>) {
                 pluralStringResource(R.plurals.match_count, result.matches.size, result.matches.size)
             }
             val label = stringResource(R.string.round_label, n + 1)
-            Column(
-                Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .background(colour.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                    .border(2.dp, colour, RoundedCornerShape(8.dp))
-                    .testTag("chip_$n")
-                    .clearAndSetSemantics { contentDescription = "$label: $digits, $outcome" },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text(digits, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
-                Text(outcome, fontSize = 11.sp, maxLines = 1)
+            Box(Modifier.weight(1f)) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .background(colour.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                        // A-50: the chip being edited gets a thicker outline.
+                        .border(if (editing == n) 4.dp else 2.dp, colour, RoundedCornerShape(8.dp))
+                        .clickable { menuOpen = true }
+                        .testTag("chip_$n")
+                        // A-54: a button whose label says what it is.
+                        .clearAndSetSemantics {
+                            contentDescription = "$label: $digits, $outcome"
+                            role = Role.Button
+                            onClick {
+                                menuOpen = true
+                                true
+                            }
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(digits, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1)
+                    Text(outcome, fontSize = 11.sp, maxLines = 1)
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.edit_round, n + 1)) },
+                        onClick = {
+                            menuOpen = false
+                            onEdit(n)
+                        },
+                        modifier = Modifier.testTag("edit_round"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.delete_round, n + 1)) },
+                        onClick = {
+                            menuOpen = false
+                            onDelete(n)
+                        },
+                        modifier = Modifier.testTag("delete_round"),
+                    )
+                }
             }
         }
     }
 }
 
-/** A-15, A-18, A-20: digit slots (or the round-limit text) and the Clear button. */
+/**
+ * A-15, A-18, A-20, A-50: digit slots (or the round-limit text) and the Clear
+ * button; while editing, a label, the edited round's slots and Cancel.
+ */
 @Composable
-private fun InputRow(typed: List<Int>, nextColour: Color, isFull: Boolean, canClear: Boolean, onClear: () -> Unit) {
+private fun InputRow(
+    typed: List<Int>,
+    slotColour: Color,
+    editing: Int?,
+    isFull: Boolean,
+    canClear: Boolean,
+    onClear: () -> Unit,
+    onCancelEdit: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().height(48.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (isFull) {
+        Row(
+            Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (editing != null) {
+                Text(
+                    stringResource(R.string.editing_round, editing + 1),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("editing_round"),
+                )
+            }
+            if (isFull && editing == null) {
                 Text(
                     stringResource(R.string.round_limit),
                     style = MaterialTheme.typography.bodyMedium,
@@ -152,7 +215,7 @@ private fun InputRow(typed: List<Int>, nextColour: Color, isFull: Boolean, canCl
                     Box(
                         Modifier
                             .size(40.dp)
-                            .border(2.dp, nextColour, RoundedCornerShape(8.dp))
+                            .border(2.dp, slotColour, RoundedCornerShape(8.dp))
                             .testTag("slot_$i"),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -161,11 +224,18 @@ private fun InputRow(typed: List<Int>, nextColour: Color, isFull: Boolean, canCl
                 }
             }
         }
-        OutlinedButton(
-            onClick = onClear,
-            enabled = canClear,
-            modifier = Modifier.height(48.dp).testTag("clear"),
-        ) { Text(stringResource(R.string.clear)) }
+        if (editing != null) {
+            OutlinedButton(
+                onClick = onCancelEdit,
+                modifier = Modifier.height(48.dp).testTag("cancel_edit"),
+            ) { Text(stringResource(R.string.cancel)) }
+        } else {
+            OutlinedButton(
+                onClick = onClear,
+                enabled = canClear,
+                modifier = Modifier.height(48.dp).testTag("clear"),
+            ) { Text(stringResource(R.string.clear)) }
+        }
     }
 }
 

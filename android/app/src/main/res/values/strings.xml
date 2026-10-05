@@ -24,4 +24,7 @@
     <string name="filter_invalid">无效：%s</string>
     <string name="copy">复制</string>
     <string name="copied">已复制</string>
+    <string name="edit_round">编辑第 %d 轮</string>
+    <string name="delete_round">删除第 %d 轮</string>
+    <string name="editing_round">编辑第 %d 轮：</string>
 </resources>

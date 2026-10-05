@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 EXPECTED_DIR = ROOT / "tests" / "expected"
 sys.path.insert(0, str(ROOT))
 
-from honeycomb import GRID, find_combinations, highlight_rounds  # noqa: E402
+from honeycomb import GRID, delete_round, edit_round, find_combinations, highlight_rounds  # noqa: E402
 
 try:
     from PIL import Image
@@ -138,6 +138,44 @@ class TestReuse(ScenarioTests, unittest.TestCase):
     """3 4 7 -> 7 8 9: round 2 may reuse a round-1 7 cell"""
 
     SCENARIO = SCENARIOS["reuse"]
+
+
+class TestDeleteRound2(ScenarioTests, unittest.TestCase):
+    """docs/requirements.md 7.6: 3 4 7 -> 0 5 1 -> 2 9 3, then delete round 2"""
+
+    SCENARIO = SCENARIOS["delete_round_2"]
+
+
+class TestEditRound2(ScenarioTests, unittest.TestCase):
+    """docs/requirements.md 7.6: 3 4 7 -> 0 5 1 -> 2 9 3, then edit round 2 to 7 8 9"""
+
+    SCENARIO = SCENARIOS["edit_round_2"]
+
+
+class TestEditDelete(unittest.TestCase):
+    """R-11, R-12: the list operations; O-5 is covered by the scenarios above."""
+
+    BASE = SCENARIOS["three_rounds"]["rounds"]
+
+    def test_delete_moves_later_rounds_up(self):
+        self.assertEqual(delete_round(self.BASE, 1), SCENARIOS["delete_round_2"]["rounds"])
+
+    def test_edit_replaces_digits_only(self):
+        self.assertEqual(edit_round(self.BASE, 1, [7, 8, 9]), SCENARIOS["edit_round_2"]["rounds"])
+
+    def test_inputs_are_not_changed(self):
+        before = [list(r) for r in self.BASE]
+        edit_round(self.BASE, 0, [1, 2, 3])
+        delete_round(self.BASE, 0)
+        self.assertEqual(self.BASE, before)
+
+    def test_bad_arguments(self):
+        with self.assertRaises(IndexError):
+            delete_round(self.BASE, 3)
+        with self.assertRaises(IndexError):
+            edit_round(self.BASE, -1, [1, 2, 3])
+        with self.assertRaises(ValueError):
+            edit_round(self.BASE, 0, [1, 2])
 
 
 class TestRules(unittest.TestCase):
