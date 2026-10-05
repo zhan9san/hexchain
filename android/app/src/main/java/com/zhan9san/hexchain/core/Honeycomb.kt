@@ -71,6 +71,19 @@ class Honeycomb(val grid: List<List<Int>>) {
     companion object {
         const val MAX_ROUNDS = 4
 
+        /** R-11: replace the digits of round [n] (0-based); results are recomputed (O-5). */
+        fun editRound(rounds: List<List<Int>>, n: Int, digits: List<Int>): List<List<Int>> {
+            require(n in rounds.indices) { "no round ${n + 1}" }
+            require(digits.size == 3 && digits.all { it in 0..9 }) { "a round is 3 digits: $digits" }
+            return rounds.toMutableList().also { it[n] = digits }
+        }
+
+        /** R-12: remove round [n] (0-based); later rounds move up one place. */
+        fun deleteRound(rounds: List<List<Int>>, n: Int): List<List<Int>> {
+            require(n in rounds.indices) { "no round ${n + 1}" }
+            return rounds.filterIndexed { i, _ -> i != n }
+        }
+
         private val MATCH_ORDER = Comparator<Match> { a, b ->
             a.zip(b).map { (x, y) -> x.compareTo(y) }.firstOrNull { it != 0 } ?: 0
         }

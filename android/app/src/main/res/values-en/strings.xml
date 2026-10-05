@@ -25,4 +25,7 @@
     <string name="filter_invalid">Invalid: %s</string>
     <string name="copy">Copy</string>
     <string name="copied">Copied</string>
+    <string name="edit_round">Edit round %d</string>
+    <string name="delete_round">Delete round %d</string>
+    <string name="editing_round">Round %d:</string>
 </resources>

@@ -74,7 +74,8 @@ document wins and this document is fixed.
    (R-1); there is no submit button. The slots then empty for the next
    round.
 4. **A-17 Backspace**: removes the last digit of the round being typed. It
-   cannot change a submitted round (R-10).
+   cannot change a submitted round; editing one is done from its chip
+   (A-49).
 5. **A-18 Round limit**: after round 4 is submitted, the keypad is disabled
    and the text `round_limit` (section 10) replaces the digit slots (R-2).
 
@@ -83,7 +84,7 @@ document wins and this document is fixed.
 1. **A-19 Chips**: one chip per submitted round, in a single row of up to 4
    chips. Each chip has the round's colour (A-13) and shows the 3 digits
    and, below them, the match count or the text `no_match` (O-2, R-9).
-   Empty places stay blank.
+   Empty places stay blank. Tapping a chip opens its menu (A-49).
 
 ## 7. Clear
 
@@ -128,6 +129,9 @@ Simplified Chinese (default):
 | `clear_title`       | 清除所有轮次？                |
 | `clear_ok`          | 清除                          |
 | `cancel`            | 取消                          |
+| `edit_round`        | 编辑第 %d 轮                  |
+| `delete_round`      | 删除第 %d 轮                  |
+| `editing_round`     | 编辑第 %d 轮：                |
 | `tab_chart`         | 蜂巢                          |
 | `tab_filter`        | 筛选                          |
 | `filter_hint`       | 输入号码，用空格或逗号分隔    |
@@ -153,6 +157,9 @@ English:
 | `clear_title`       | Clear all rounds?                       |
 | `clear_ok`          | Clear                                   |
 | `cancel`            | Cancel                                  |
+| `edit_round`        | Edit round %d                           |
+| `delete_round`      | Delete round %d                         |
+| `editing_round`     | Round %d:                               |
 | `tab_chart`         | Chart                                   |
 | `tab_filter`        | Filter                                  |
 | `filter_hint`       | Numbers, separated by spaces or commas  |
@@ -272,3 +279,49 @@ From top to bottom:
 3. **A-46 UI tests**: type a list, pick a digit and switch modes; check the
    kept numbers, both counts, the duplicates and the invalid tokens.
 4. **A-47 Version**: released as `1.1.0` (A-34).
+
+## 16. Edit and Delete Rounds (Version 1.2)
+
+Android details for core rules R-11 to R-13.
+
+### 16.1 Chip Menu
+
+1. **A-49 Menu**: tapping a round chip opens a menu next to it with
+   `edit_round` and `delete_round` (e.g. "编辑第 2 轮", "删除第 2 轮").
+   Tapping outside closes it.
+
+### 16.2 Edit
+
+1. **A-50 Edit mode**: choosing `edit_round` starts edit mode for that
+   round:
+   - its chip gets a thicker outline,
+   - the digit-slot row shows `editing_round` and three empty slots in that
+     round's colour,
+   - the Clear button is replaced by `cancel`, and
+   - the keypad is enabled, even when 4 rounds exist (R-13).
+
+   Digits typed for a new round before entering edit mode are discarded.
+2. **A-51 Replace**: typing the 3rd digit replaces the round's digits,
+   recomputes it and every later round (R-11), and leaves edit mode.
+   Backspace removes typed digits only. `cancel`, or tapping the same chip
+   and choosing `edit_round` again, leaves edit mode without changes.
+
+### 16.3 Delete
+
+1. **A-52 Delete at once**: choosing `delete_round` removes the round
+   immediately, without confirmation and without undo (R-12). Later chips
+   move left; every chip, highlight and colour follows its new round number
+   (A-13). If that round was being edited, edit mode ends.
+
+### 16.4 State and Testing
+
+1. **A-53 State**: edits and deletes are saved like new rounds (A-22).
+   Edit mode itself is not saved; it ends when the app is closed.
+2. **A-54 Accessibility**: round chips are buttons; their label (A-23)
+   tells screen readers that tapping opens the menu.
+3. **A-55 Tests**: unit tests check O-5 (results after an edit or delete
+   equal entering the remaining rounds from the start). UI tests use the
+   example in core section 7.6: delete round 2, and edit round 2 to
+   `7 8 9`, then check every round's highlight set; also edit a round
+   while 4 rounds exist.
+4. **A-56 Version**: released as `1.2.0` (A-34).

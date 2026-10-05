@@ -90,8 +90,7 @@ In scope:
 Out of scope:
 
 - Loading or editing other charts.
-- Undoing a single round, editing an earlier round, or undoing a clear
-  (see R-10).
+- Undoing a clear, an edit or a delete (R-10 to R-12).
 
 ## 5. Rules
 
@@ -127,8 +126,19 @@ Out of scope:
 ### 5.4 Clear
 
 1. **R-10 Clear all**: clearing removes every round and its result; the
-   next input becomes round 1 again. Clearing is the only way to change
-   entered rounds and cannot be undone.
+   next input becomes round 1 again. It cannot be undone.
+
+### 5.5 Edit and Delete
+
+1. **R-11 Edit round n**: the 3 digits of round `n` are replaced (R-1).
+   Rounds `n`, `n+1` … are recomputed in order (R-5 to R-9), since each
+   round depends on the one before it. The number of rounds is unchanged.
+2. **R-12 Delete round n**: round `n` is removed and every later round moves
+   up one place (round `n+1` becomes round `n`, and so on). Rounds `n` …
+   are recomputed in order, each against its new previous round. Deleting
+   cannot be undone and frees a place for a new round (R-2).
+3. **R-13 Any round**: any entered round can be edited or deleted, at any
+   time, including when 4 rounds exist.
 
 ## 6. Outputs
 
@@ -143,6 +153,9 @@ Out of scope:
    - the number of valid matches (0 means no match).
 3. **O-3 Shared cells**: a cell may belong to several highlight sets
    (R-7, R-8); each `H(n)` is kept separately.
+4. **O-5 Recompute**: after an edit or delete, the result of every round is
+   the same as if the remaining rounds had been entered in order from the
+   start.
 
 ## 7. Examples
 
@@ -196,6 +209,20 @@ ignored (R-8):
 | 1 | R14C9, R15C9, R16C9 | 7 9 8  | touches R15C8 (4), R16C8 (3)      |
 | 2 | R1C2, R2C1, R3C2    | 7 8 9  | overlaps R1C2 (7)                 |
 | 3 | R2C5, R2C6, R2C7    | 9 7 8  | overlaps R2C6 (7)                 |
+
+### 7.6 Edit and Delete: rounds `3 4 7`, `0 5 1`, `2 9 3`
+
+Starting from the rounds of 7.4 (5, 4 and 4 matches):
+
+| Action                  | Rounds after              | Matches per round |
+| ----------------------- | ------------------------- | ----------------- |
+| Delete round 2 (R-12)   | `3 4 7`, `2 9 3`          | 5, 4              |
+| Edit round 2 to `7 8 9` | `3 4 7`, `7 8 9`, `2 9 3` | 5, 10, 6          |
+
+After the delete, `2 9 3` is searched around round 1 instead of `0 5 1`.
+It still has 4 matches, but 2 of them differ: R4C8 R4C9 R5C9 and
+R15C9 R16C7 R16C8 replace R5C2 R5C3 R6C3 and R10C6 R11C6 R12C5 (compare
+7.4). After the edit, both round 2 and round 3 change (R-11).
 
 All cell references in this section are 1-based (`R<row>C<column>`). The
 full expected results are the scenarios in `tests/test_honeycomb.py`.

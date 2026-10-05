@@ -40,22 +40,59 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var typed: List<Int> by mutableStateOf(emptyList())
         private set
 
+    /** A-50: the round being edited (0-based), or null; not persisted (A-53). */
+    var editing: Int? by mutableStateOf(null)
+        private set
+
     val results: List<RoundResult> by derivedStateOf { honeycomb.highlightRounds(rounds) }
 
     /** R-2: no more input after the last round. */
     val isFull: Boolean get() = rounds.size >= Honeycomb.MAX_ROUNDS
 
-    /** A-16: the 3rd digit submits the round. */
+    /** A-50, R-13: the keypad works for a new round, or for the round being edited. */
+    val canType: Boolean get() = editing != null || !isFull
+
+    /** A-16, A-51: the 3rd digit submits a new round, or replaces the edited one. */
     fun type(digit: Int) {
-        if (isFull) return
+        if (!canType) return
         val next = typed + digit
-        if (next.size == 3) {
-            rounds = rounds + listOf(next)
-            typed = emptyList()
-            save()
-        } else {
+        if (next.size < 3) {
             typed = next
+            return
         }
+        val n = editing
+        rounds = if (n != null) Honeycomb.editRound(rounds, n, next) else rounds + listOf(next)
+        editing = null
+        typed = emptyList()
+        save()
+    }
+
+    /** A-50: digits typed for a new round are discarded. */
+    fun startEdit(n: Int) {
+        if (n !in rounds.indices) return
+        editing = n
+        typed = emptyList()
+    }
+
+    /** A-51 */
+    fun cancelEdit() {
+        editing = null
+        typed = emptyList()
+    }
+
+    /** A-52, R-12: later rounds move up; editing follows its round or ends. */
+    fun deleteRound(n: Int) {
+        if (n !in rounds.indices) return
+        rounds = Honeycomb.deleteRound(rounds, n)
+        editing = editing?.let { e ->
+            when {
+                e == n -> null
+                e > n -> e - 1
+                else -> e
+            }
+        }
+        if (editing == null) typed = emptyList()
+        save()
     }
 
     /** A-17: only the round being typed can be changed. */
@@ -66,6 +103,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** R-10 */
     fun clear() {
         rounds = emptyList()
+        editing = null
         typed = emptyList()
         save()
     }
