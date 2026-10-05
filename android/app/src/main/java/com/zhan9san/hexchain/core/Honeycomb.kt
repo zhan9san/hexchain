@@ -8,7 +8,7 @@ data class Cell(val row: Int, val col: Int) : Comparable<Cell> {
         compareValuesBy(this, other, Cell::row, Cell::col)
 }
 
-/** A valid match: 3 cells, sorted. */
+/** A valid match: 3, 2 or 1 cells (R-3, R-14, R-15), sorted. */
 typealias Match = List<Cell>
 
 /** Result of one round (O-2). */
@@ -38,18 +38,30 @@ class Honeycomb(val grid: List<List<Int>>) {
         match.any { cell -> neighbours(cell).any { it in previous } }
 
     /**
-     * Every connected group of 3 cells whose digits equal [digits] in any order
-     * (R-3, R-4). With [previous], keep only groups that touch or overlap it (R-6, R-7).
+     * Every match for a round's [digits], in any order (R-4):
+     * - A B C (3 different digits): connected groups of 3 cells (R-3);
+     * - A B B (exactly 2 different): 2 adjacent cells, one A and one B (R-14);
+     * - A A A (all equal): single cells holding A (R-15).
+     * With [previous], keep only matches that touch or overlap it (R-6, R-7).
      */
     fun findMatches(digits: List<Int>, previous: Set<Cell>? = null): List<Match> {
-        val target = digits.sorted()
+        val distinct = digits.toSortedSet().toList()
         val found = mutableSetOf<Match>()
         for (centre in cells) {
-            // A connected triple always has a cell adjacent to the other two.
-            val near = neighbours(centre)
-            for (i in near.indices) for (j in i + 1 until near.size) {
-                val match = listOf(near[i], centre, near[j]).sorted()
-                if (match.map(::digit).sorted() == target) found += match
+            when (distinct.size) {
+                1 -> if (digit(centre) == distinct[0]) found += listOf(centre)
+                2 -> for (n in neighbours(centre)) {
+                    val match = listOf(centre, n).sorted()
+                    if (match.map(::digit).sorted() == distinct) found += match
+                }
+                else -> {
+                    // A connected triple always has a cell adjacent to the other two.
+                    val near = neighbours(centre)
+                    for (i in near.indices) for (j in i + 1 until near.size) {
+                        val match = listOf(near[i], centre, near[j]).sorted()
+                        if (match.map(::digit).sorted() == distinct) found += match
+                    }
+                }
             }
         }
         val valid = if (previous == null) found else found.filter { match ->

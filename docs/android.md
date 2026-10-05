@@ -325,3 +325,15 @@ Android details for core rules R-11 to R-13.
    `7 8 9`, then check every round's highlight set; also edit a round
    while 4 rounds exist.
 4. **A-56 Version**: released as `1.2.0` (A-34).
+
+## 17. Repeated Digits (Version 1.3)
+
+Android details for core rules R-14 and R-15.
+
+1. **A-57 Input**: rounds with repeated digits (A B B, A A A) are typed
+   like any other round (A-14 to A-16); nothing changes on screen.
+2. **A-58 Counts**: the chip count (A-19) counts pairs for an A B B round
+   and single cells for an A A A round.
+3. **A-59 Tests**: the shared scenarios `abc_aaa_abb` and `aaa_abb` (core
+   section 7.7) run in the Python, Kotlin and UI tests.
+4. **A-60 Version**: released as `1.3.0` (A-34).

@@ -22,7 +22,7 @@ class HoneycombTest {
     @Test
     fun scenariosAreLoaded() {
         assertEquals(
-            listOf("three_rounds", "reuse", "delete_round_2", "edit_round_2"),
+            listOf("three_rounds", "reuse", "delete_round_2", "edit_round_2", "abc_aaa_abb", "aaa_abb"),
             scenarios.map { it.name },
         )
     }
@@ -94,9 +94,27 @@ class HoneycombTest {
 
     @Test
     fun emptyRoundEmptiesLaterRounds() {
-        // No 0 0 0 combination exists, so round 2 has nothing to touch.
-        val results = honeycomb.highlightRounds(listOf(listOf(0, 0, 0), listOf(3, 4, 7)))
-        assertEquals(listOf(emptySet<Cell>(), emptySet()), results.map { it.highlight })
+        // R-9: 4 6 9 has no match next to 0 2 6, so round 3 has nothing to touch.
+        val results = honeycomb.highlightRounds(listOf(listOf(0, 2, 6), listOf(4, 6, 9), listOf(3, 4, 7)))
+        assertTrue(results[0].highlight.isNotEmpty())
+        assertEquals(listOf(emptySet<Cell>(), emptySet()), results.drop(1).map { it.highlight })
+    }
+
+    @Test
+    fun abbAnyOrder() {
+        val abb = honeycomb.findMatches(listOf(3, 4, 4))
+        assertEquals(abb, honeycomb.findMatches(listOf(4, 3, 4)))
+        assertEquals(abb, honeycomb.findMatches(listOf(4, 4, 3)))
+    }
+
+    @Test
+    fun abbPairsAndAaaCells() {
+        val pairs = honeycomb.findMatches(listOf(3, 4, 4))
+        assertEquals(11, pairs.size)
+        assertTrue(pairs.all { m -> m.map(honeycomb::digit).sorted() == listOf(3, 4) })
+        val sevens = honeycomb.findMatches(listOf(7, 7, 7))
+        assertEquals(16, sevens.size)
+        assertEquals(honeycomb.cells.count { honeycomb.digit(it) == 7 }, sevens.size)
     }
 
     private val matchOrder = Comparator<Match> { a, b ->
