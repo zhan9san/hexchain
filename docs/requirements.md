@@ -3,9 +3,10 @@
 ## 1. Overview
 
 A fixed honeycomb chart of hexagons holds one digit (0–9) per hexagon. The
-user enters up to 4 rounds of 3 digits. For each round, every group of 3
-connected cells holding those digits is found; from round 2 on, the search
-is limited to the area around the previous round's result.
+user enters up to 4 rounds of 3 digits. For each round, every group of
+connected cells holding those digits is found (3 cells, or 2 or 1 when
+digits repeat); from round 2 on, the search is limited to the area around
+the previous round's result.
 
 Separately, a **number filter** (section 8) takes a list of 3-digit numbers
 and kills (removes) or keeps the numbers that contain a chosen digit.
@@ -26,8 +27,12 @@ are the reference implementation of this document.
   hexagons on the left/right edges have no digit and are ignored.
 - **Adjacent**: two cells are adjacent if they share at least one side.
   Each cell has up to 6 neighbours.
-- **Combination**: three distinct cells that form one connected shape
-  through adjacency (allowed shapes: R-3).
+- **Round pattern**: by how many different digits a round has, in any
+  order: **A B C** (3 different, e.g. `3 4 7`), **A B B** (2 different,
+  e.g. `3 4 4`, `4 3 4`) or **A A A** (all equal, e.g. `7 7 7`).
+- **Combination**: distinct cells that form one connected shape through
+  adjacency: 3 cells for A B C (R-3), 2 for A B B (R-14), 1 for A A A
+  (R-15).
 - **Round**: one input of exactly 3 digits. Rounds are numbered 1 to 4 in
   the order they are entered.
 - **Match**: a combination whose digits equal the round's digits (R-4).
@@ -103,11 +108,16 @@ Out of scope:
 
 ### 5.2 Matching
 
-1. **R-3 Shape**: a combination is any 3 connected cells, either
+1. **R-3 Shape (A B C)**: a combination is any 3 connected cells, either
    - a chain `A–B–C` (B adjacent to both A and C), or
    - a triangle (all three mutually adjacent).
 2. **R-4 Order**: digits match in any order. Input `3 4 7` matches cells
-   reading 3-4-7, 7-3-4, 4-7-3, etc.
+   reading 3-4-7, 7-3-4, 4-7-3, etc., and `3 4 4`, `4 3 4` and `4 4 3`
+   are the same A B B round.
+3. **R-14 A B B**: a combination is 2 adjacent cells, one holding A and
+   one holding B. `3 4 4` matches every 3 next to a 4.
+4. **R-15 A A A**: a combination is a single cell holding A. `7 7 7`
+   matches every cell holding 7.
 
 ### 5.3 Round Chaining
 
@@ -148,7 +158,7 @@ Out of scope:
 2. **O-2 Result per round**: for every entered round, in order, the result
    is
    - the round's 3 digits,
-   - the list of valid matches (each a set of 3 cells),
+   - the list of valid matches (each a set of 3, 2 or 1 cells),
    - the highlight set `H(n)`, and
    - the number of valid matches (0 means no match).
 3. **O-3 Shared cells**: a cell may belong to several highlight sets
@@ -223,6 +233,18 @@ After the delete, `2 9 3` is searched around round 1 instead of `0 5 1`.
 It still has 4 matches, but 2 of them differ: R4C8 R4C9 R5C9 and
 R15C9 R16C7 R16C8 replace R5C2 R5C3 R6C3 and R10C6 R11C6 R12C5 (compare
 7.4). After the edit, both round 2 and round 3 change (R-11).
+
+### 7.7 Repeated Digits: `3 4 7`, `7 7 7`, `3 4 4`
+
+| Round | Pattern | Matches                     | Count |
+| ----- | ------- | --------------------------- | ----- |
+| 1     | A B C   | 3 connected cells (R-3)     | 5     |
+| 2     | A A A   | single 7-cells (R-15)       | 5     |
+| 3     | A B B   | adjacent 3–4 pairs (R-14)   | 3     |
+
+Round 2: of the 16 cells holding 7, only the 5 inside `H(1)` qualify
+(R-6, R-7); no other 7 touches round 1. As round 1, `7 7 7` matches all 16
+cells, and `3 4 4` all 11 adjacent 3–4 pairs.
 
 All cell references in this section are 1-based (`R<row>C<column>`). The
 full expected results are the scenarios in `tests/test_honeycomb.py`.

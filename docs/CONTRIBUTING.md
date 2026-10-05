@@ -110,6 +110,16 @@ Python commands run in the repository root; Gradle commands in `android/`.
 - Debug APK: `./gradlew :app:assembleDebug`
 - Lint: `./gradlew :app:lintDebug`
 
+UI tests can report `BUILD SUCCESSFUL` without running when the test APK
+fails to install, e.g. over an older debug install on Android 8.0. Check
+that `android/app/build/outputs/androidTest-results/connected/debug/`
+holds a `TEST-*.xml` file with the expected number of tests; if not,
+uninstall the debug app first:
+
+```bash
+adb uninstall com.zhan9san.hexchain.debug
+```
+
 Start an emulator with a window:
 
 ```bash

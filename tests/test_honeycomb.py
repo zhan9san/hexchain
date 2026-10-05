@@ -58,27 +58,34 @@ def label(rounds, n):
     return f"round {n + 1} ({' '.join(map(str, rounds[n]))})"
 
 
+def centre(r, c):
+    return (c + (0.5 if r % 2 else 0.0), r * math.sqrt(3) / 2)
+
+
+def adjacent(a, b):
+    return abs(math.dist(centre(*a), centre(*b)) - 1) < 1e-9
+
+
 def brute_force(grid, digits, previous=None):
-    """Independent check: adjacency from hexagon centre distance, all 3-cell subsets."""
-    def centre(r, c):
-        return (c + (0.5 if r % 2 else 0.0), r * math.sqrt(3) / 2)
+    """Independent check: adjacency from hexagon centre distance, all k-cell subsets.
 
-    def adjacent(a, b):
-        return abs(math.dist(centre(*a), centre(*b)) - 1) < 1e-9
-
+    k is 3, 2 or 1 for A B C, A B B and A A A rounds (R-3, R-14, R-15).
+    """
+    distinct = sorted(set(digits))
+    k = len(distinct)
     cells = [(r, c) for r, row in enumerate(grid) for c in range(len(row)) if row[c] in digits]
     found = []
-    for trio in combinations(cells, 3):
-        if sorted(grid[r][c] for r, c in trio) != sorted(digits):
+    for group in combinations(cells, k):
+        if sorted(grid[r][c] for r, c in group) != distinct:
             continue
-        if sum(adjacent(a, b) for a, b in combinations(trio, 2)) < 2:
+        if sum(adjacent(a, b) for a, b in combinations(group, 2)) < k - 1:
             continue
         if previous is not None and not (
-            previous.intersection(trio)
-            or any(adjacent(a, p) for a in trio for p in previous)
+            previous.intersection(group)
+            or any(adjacent(a, p) for a in group for p in previous)
         ):
             continue
-        found.append(tuple(sorted(trio)))
+        found.append(tuple(sorted(group)))
     return sorted(found)
 
 
@@ -152,6 +159,18 @@ class TestEditRound2(ScenarioTests, unittest.TestCase):
     SCENARIO = SCENARIOS["edit_round_2"]
 
 
+class TestAbcAaaAbb(ScenarioTests, unittest.TestCase):
+    """3 4 7 -> 7 7 7 -> 3 4 4: single cells and pairs chained after a 3-cell round"""
+
+    SCENARIO = SCENARIOS["abc_aaa_abb"]
+
+
+class TestAaaAbb(ScenarioTests, unittest.TestCase):
+    """7 7 7 as round 1 -> 3 4 4"""
+
+    SCENARIO = SCENARIOS["aaa_abb"]
+
+
 class TestEditDelete(unittest.TestCase):
     """R-11, R-12: the list operations; O-5 is covered by the scenarios above."""
 
@@ -190,8 +209,29 @@ class TestRules(unittest.TestCase):
             highlight_rounds(GRID, [[3, 4, 7]] * 5)
 
     def test_empty_round_empties_later_rounds(self):
-        # No 0 0 0 combination exists, so round 2 has nothing to touch.
-        self.assertEqual(highlight_rounds(GRID, [[0, 0, 0], [3, 4, 7]]), [set(), set()])
+        # R-9: 4 6 9 has no match next to 0 2 6, so round 3 has nothing to touch.
+        first, second, third = highlight_rounds(GRID, [[0, 2, 6], [4, 6, 9], [3, 4, 7]])
+        self.assertTrue(first)
+        self.assertEqual((second, third), (set(), set()))
+
+    def test_abb_any_order(self):
+        # R-4, R-14: 3 4 4, 4 3 4 and 4 4 3 are the same A B B round.
+        self.assertEqual(find_combinations(GRID, [3, 4, 4]), find_combinations(GRID, [4, 3, 4]))
+        self.assertEqual(find_combinations(GRID, [3, 4, 4]), find_combinations(GRID, [4, 4, 3]))
+
+    def test_abb_pairs_and_aaa_cells(self):
+        # R-14: 11 adjacent 3-4 pairs; R-15: all 16 cells holding 7.
+        pairs = find_combinations(GRID, [3, 4, 4])
+        self.assertEqual(len(pairs), 11)
+        self.assertTrue(all(sorted(GRID[r][c] for r, c in m) == [3, 4] for m in pairs))
+        sevens = find_combinations(GRID, [7, 7, 7])
+        self.assertEqual(len(sevens), 16)
+        self.assertEqual(len(sevens), sum(row.count(7) for row in GRID))
+
+    def test_matches_brute_force_for_every_pattern(self):
+        for digits in ([3, 4, 7], [3, 4, 4], [7, 7, 7], [5, 0, 5]):
+            with self.subTest(digits):
+                self.assertEqual(find_combinations(GRID, digits), brute_force(GRID, digits))
 
 
 if __name__ == "__main__":

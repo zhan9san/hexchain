@@ -30,20 +30,35 @@ def touches(grid, cells, previous):
 
 
 def find_combinations(grid, digits, previous=None):
-    """Return every connected group of 3 cells whose digits match `digits` in any order.
+    """Return every match for a round's `digits`, in any order (R-4):
 
-    If `previous` (a set of highlighted cells) is given, keep only groups that
+    - A B C (3 different digits): connected groups of 3 cells (R-3);
+    - A B B (exactly 2 different): 2 adjacent cells, one A and one B (R-14);
+    - A A A (all equal): single cells holding A (R-15).
+
+    If `previous` (a set of highlighted cells) is given, keep only matches that
     share at least one side with it or reuse at least one of its cells.
-    Each result is a tuple of 3 (row, col) cells, sorted; results are sorted too.
+    Each result is a sorted tuple of (row, col) cells; results are sorted too.
     """
-    target = sorted(digits)
+    distinct = sorted(set(digits))
     found = set()
     for r, row in enumerate(grid):
         for c in range(len(row)):
+            if len(distinct) == 1:
+                if grid[r][c] == distinct[0]:
+                    found.add(((r, c),))
+                continue
+            near = neighbours(grid, r, c)
+            if len(distinct) == 2:
+                for n in near:
+                    cells = tuple(sorted([(r, c), n]))
+                    if sorted(grid[x][y] for x, y in cells) == distinct:
+                        found.add(cells)
+                continue
             # A connected triple always has a cell adjacent to the other two.
-            for a, b in combinations(neighbours(grid, r, c), 2):
+            for a, b in combinations(near, 2):
                 cells = tuple(sorted([a, (r, c), b]))
-                if sorted(grid[x][y] for x, y in cells) == target:
+                if sorted(grid[x][y] for x, y in cells) == distinct:
                     found.add(cells)
     if previous is not None:
         found = {
